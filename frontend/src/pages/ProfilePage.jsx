@@ -1,42 +1,52 @@
-import { useState } from "react";
-import { userStore } from "../store/UserStore.js";
+import React, { useContext, useState ,useEffect} from "react";
 import { Camera, Mail, User } from "lucide-react";
 import avatar from '../assets/avatar.jpg';
+import { AuthContext } from "../context/AuthContext";
+import {useNavigate} from 'react-router-dom'
 
 const ProfilePage = () => {
-  const { authUser, isUpdatingProfile, updateProfile } = userStore();
-  const [selectedImg, setSelectedImg] = useState(null);
-  const [fullName, setFullName] = useState(authUser?.user?.fullName || "");
-  const [email, setEmail] = useState(authUser?.user?.email || "");
-  const [isSaving, setIsSaving] = useState(false);
+const navigate= useNavigate()
+  const { updateProfile, authUser } = useContext(AuthContext);
+  const [fullName, setFullName] = useState("");
+const [bio, setBio] = useState("");
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
-    };
-  };
-
-  const handleUpdate = async () => {
-    setIsSaving(true);
-    await updateProfile({ fullName, email });
-    setIsSaving(false);
-  };
-
-  if (!authUser) {
-    return (
-      <div className="h-screen flex items-center justify-center text-lg text-gray-500">
-        Loading profile...
-      </div>
-    );
+useEffect(() => {
+  if (authUser) {
+    setFullName(authUser.fullName || "");
+    setBio(authUser.bio || "");
   }
+}, [authUser]);
+
+  const [image, setImage] = useState(null);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+    }
+  };
+
+  const handleUpdate = async (e) => {
+   e.preventDefault()
+    try {
+      if(!image)
+      {
+        await updateProfile({fullName:fullName,bio});
+        navigate('/')
+        return;
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(image);
+    reader.onload=async()=>{
+      const base64Image = reader.result
+    
+    await updateProfile({profilePic:base64Image, fullName:fullName, bio})
+    navigate('/')
+    }  
+    } catch (error) {
+      console.error("Update failed:", error);
+      alert("Failed to update profile.");
+    }
+  };
 
   return (
     <div className="h-screen pt-20">
@@ -51,17 +61,16 @@ const ProfilePage = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={selectedImg || authUser?.user?.profilePic || avatar}
+                src={image ? URL.createObjectURL(image) : (authUser?.image || avatar)}
                 alt="Profile"
                 className="size-32 rounded-full object-cover border-4"
               />
               <label
                 htmlFor="avatar-upload"
-                className={`absolute bottom-0 right-0 
+                className="absolute bottom-0 right-0 
                   bg-base-content hover:scale-105
                   p-2 rounded-full cursor-pointer 
-                  transition-all duration-200
-                  ${isUpdatingProfile ? "animate-pulse pointer-events-none" : ""}`}
+                  transition-all duration-200"
               >
                 <Camera className="w-5 h-5 text-base-200" />
                 <input
@@ -69,13 +78,12 @@ const ProfilePage = () => {
                   id="avatar-upload"
                   className="hidden"
                   accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUpdatingProfile}
+                  onChange={handleImageChange}
                 />
               </label>
             </div>
             <p className="text-sm text-zinc-400">
-              {isUpdatingProfile ? "Uploading..." : "Click the camera icon to update your photo"}
+              Click the camera icon to update your photo
             </p>
           </div>
 
@@ -102,19 +110,29 @@ const ProfilePage = () => {
               </div>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={authUser?.email}
+                readOnly
+                className="w-full px-4 py-2.5 bg-base-200 rounded-lg border outline-none text-zinc-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="text-sm text-zinc-400 flex items-center gap-2">
+                Bio
+              </div>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
                 className="w-full px-4 py-2.5 bg-base-200 rounded-lg border outline-none"
-                placeholder="Enter your email address"
+                placeholder="Write something about yourself"
               />
             </div>
 
             <button
               onClick={handleUpdate}
-              disabled={isSaving}
               className="mt-4 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-all"
             >
-              {isSaving ? "Saving..." : "Update Info"}
+              Update Info
             </button>
           </div>
 
@@ -124,7 +142,7 @@ const ProfilePage = () => {
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-zinc-700">
                 <span>Member Since</span>
-                <span>{authUser?.user?.createdAt?.split("T")[0]}</span>
+                <span>{authUser?.createdAt?.substring(0, 10) || "N/A"}</span>
               </div>
               <div className="flex items-center justify-between py-2">
                 <span>Account Status</span>

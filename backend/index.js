@@ -2,76 +2,61 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import http from 'http'; // 👈 for creating HTTP server
-import { Server } from 'socket.io'; // 👈 Socket.IO
 import connectDb from './db/connectDB.js';
 import userRouter from './routes/userRoutes.js';
 import messageRouter from './routes/messageRoutes.js';
+import { Server } from 'socket.io';
+import http from 'http';
+
+
 
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app); 
+const server = http.createServer(app)
 
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    credentials: true,
-  },
-});
+//Initialise socket.io server
+export const io = new Server(server,{
+  cors:{origin:"*"}
+})
 
-// Online users map
-const userSocketMap = {}; // { userId: socketId }
-export const getReceiverSocketId = (receiverId) => {
-  return userSocketMap[receiverId];
-};
+//store online users;
+export const userSocketMap = {} //{ userId:socketId}
 
-// Socket.IO Events
-io.on("connection", (socket) => {
-  console.log("📡 New client connected:", socket.id);
+//socket.io connection
+io.on("connection",(socket)=>{
+   const userId = socket.handshake.query.userId;
+   console.log("user connected ",userId)
+   if(userId)
+   {
+    userSocketMap[userId]=socket.id;
 
-  socket.on("addUser", (userId) => {
-    userSocketMap[userId] = socket.id;
-    console.log("✅ User online:", userId);
-  });
+    //emit online users to all connnected 
+    io.emit("getOnlineUSers",Object.keys(userSocketMap))
+    socket.on("disconnect",()=>{
+      console.log("user disconnected", userId)
+      delete userSocketMap[userId];
+      io.emit("getOnlineUsers",Object.keys(userSocketMap))
+    })
+   }
+})
 
-  socket.on("sendMessage", ({ receiverId, message }) => {
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receiveMessage", message);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-    for (const userId in userSocketMap) {
-      if (userSocketMap[userId] === socket.id) {
-        delete userSocketMap[userId];
-        break;
-      }
-    }
-  });
-});
-
-// Middleware & routes
 app.use(express.json({ limit: "10mb" }));
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true
-}));
+app.use(cors());
 app.use(cookieParser());
 
-app.use('/api/user', userRouter);
-app.use('/api/message', messageRouter);
+app.use('/api/auth', userRouter);
+app.use('/api/messages', messageRouter);
 
 app.get('/', (req, res) => {
   res.send("Running Backend");
 });
 
-// DB & Server start
 connectDb();
-
+if(process.env.NODE_ENV !== 'production'){
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+}
+export default server

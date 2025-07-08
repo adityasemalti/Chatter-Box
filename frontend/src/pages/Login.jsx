@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import right from '../assets/right.jpeg'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'
 import toast from 'react-hot-toast';
-import { userStore } from '../store/UserStore.js';
+import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
-  const {authUser ,login, isLogginIn} = userStore()
+  const [loading, setLoading] = useState(false)
+  const {login} = useContext(AuthContext)
     const navigate= useNavigate()
     const [formData,setFormData]= useState({
         email:'',
@@ -19,10 +20,11 @@ const Login = () => {
 
     const onSubmitHandle= async(e)=>{
         e.preventDefault();
+        setLoading(true)
        try {
         await login(formData)
-        toast.success(" Login Successfull")
         navigate('/')
+        setLoading(false)
        } catch (error) {
         toast.error("Invalid Credentials")
        }
@@ -62,7 +64,7 @@ const Login = () => {
                 className="bg-yellow-400 hover:bg-yellow-500 text-white py-3 rounded-full font-semibold transition duration-300"
               >
                 {
-                  isLogginIn ? "Logging In..." : "Login"
+                  loading ?"Logging...":"Login" 
                 }
               </button>
             </form>
