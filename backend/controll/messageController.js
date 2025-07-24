@@ -43,12 +43,10 @@ export const sendMessage = async (req, res) => {
       image: imageUrl
     });
 
-    // ✅ Populate full message with sender and receiver info
     const newMessage = await Message.findById(createdMessage._id)
       .populate("senderId", "username profilePic")
       .populate("receiverId", "username profilePic");
 
-    // Emit the populated message
     const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);

@@ -43,7 +43,7 @@ export const ChatProvider = ({ children }) => {
   try {
     const { data } = await axios.post(`/api/messages/send/${selectedUser._id}`, messageData);
     if (data.success) {
-      setMessages((prev) => [...prev, data.message]); // updated key name from backend
+      setMessages((prev) => [...prev, data.message]); 
     }
   } catch (error) {
     toast.error(error.message);
@@ -68,9 +68,9 @@ export const ChatProvider = ({ children }) => {
     try {
       const { data } = await axios.post(`/api/rooms/join/${roomId}`);
       if (data.success) {
-        setSelectedUser(null); // Clear DM
+        setSelectedUser(null);
         setSelectedRoom(data.room);
-        socket.emit("join-room", roomId); // join socket room
+        socket.emit("join-room", roomId);
         getRoomMessages(roomId);
       }
     } catch (error) {
@@ -150,13 +150,12 @@ export const ChatProvider = ({ children }) => {
     const response = await axios.delete(`/api/rooms/${roomId}`, {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // if you use token auth
+        Authorization: `Bearer ${token}`, 
       },
     });
 
-    // axios throws for non-2xx responses, so if here, request succeeded
+   
 
-    // Update rooms state by filtering out deleted room
     setRooms((prevRooms) => prevRooms.filter((room) => room._id !== roomId));
 
     return true;

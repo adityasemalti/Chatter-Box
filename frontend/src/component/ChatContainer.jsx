@@ -6,11 +6,13 @@ import "../App.css";
 import { ChatContext } from "../context/ChatContext";
 import { toast } from "react-hot-toast";
 import { Loader } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
 
 const ChatContainer = () => {
   const [loading, setLoading] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const lastMsgRef = useRef(null);
+
 
   const {
     // DMs
@@ -25,16 +27,15 @@ const ChatContainer = () => {
     sendRoomMessage,
   } = useContext(ChatContext);
 
+  const {authUser} = useContext(AuthContext)
   const [newMessage, setNewMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [imageBase64, setImageBase64] = useState(null);
 
-  // Grab current logged-in user info from localStorage (adjust if you store elsewhere)
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const currentUserId = currentUser?._id;
   const currentUserPic = currentUser?.profilePic || avatar;
 
-  /* ---------------- Fetch messages when target changes ---------------- */
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedUser && !selectedRoom) return;
@@ -50,10 +51,9 @@ const ChatContainer = () => {
       }
     };
     fetchMessages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUser?._id, selectedRoom?._id]); // depend only on IDs to avoid extra reloads
+  }, [selectedUser?._id, selectedRoom?._id]);
 
-  /* ---------------- Scroll to last message when list changes ---------------- */
+
   useEffect(() => {
     if (lastMsgRef.current) {
       lastMsgRef.current.scrollIntoView({ behavior: "smooth" });
@@ -86,7 +86,6 @@ const ChatContainer = () => {
     }
   };
 
-  /* ---------------- File attachment ---------------- */
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -99,7 +98,6 @@ const ChatContainer = () => {
     reader.readAsDataURL(file);
   };
 
-  /* ---------------- Placeholder when nothing selected ---------------- */
   if (!selectedUser && !selectedRoom) {
     return (
       <div className="w-full h-full bg-black rounded-lg flex items-center justify-center text-white p-4">
@@ -110,22 +108,18 @@ const ChatContainer = () => {
     );
   }
 
-  /* ---------------- Which messages + header info ---------------- */
   const chatMessages = selectedRoom ? roomMessages : messages;
 
   const chatHeaderName = selectedRoom
     ? selectedRoom.name
     : selectedUser?.fullName || "Unknown";
 
-  // For DMs show user's avatar; for Room show first letter badge (add real room icon if you have one)
   const chatHeaderImage = selectedRoom ? null : selectedUser?.profilePic || avatar;
 
-  /* ---------------- Sender avatar helper ---------------- */
-  // NOTE: We only have member IDs in selectedRoom.members. To show real avatars,
-  // you'd need to enrich room data with member user objects in ChatContext.
+  
   const getSenderAvatar = (senderId) => {
     if (senderId === currentUserId) return currentUserPic;
-    if (selectedRoom) return avatar; // fallback (no member profile data wired yet)
+    if (selectedRoom) return avatar; 
     return selectedUser?.profilePic || avatar;
   };
 
@@ -135,7 +129,7 @@ const ChatContainer = () => {
       <div className="flex items-center gap-3 mb-4">
         {chatHeaderImage ? (
           <img
-            src={chatHeaderImage}
+            src={selectedUser?.profilePic || avatar}
             alt="Chat"
             className="w-10 h-10 rounded-full object-cover"
           />
@@ -176,7 +170,7 @@ const ChatContainer = () => {
                 {/* Avatar (left for received) */}
                 {!isSentByMe && (
                   <img
-                    src={senderAvatar}
+                    src={selectedUser?.profilePic || avatar}
                     alt="sender"
                     className="w-8 h-8 rounded-full object-cover"
                   />
@@ -210,7 +204,7 @@ const ChatContainer = () => {
                 {/* Avatar (right for sent) */}
                 {isSentByMe && (
                   <img
-                    src={senderAvatar}
+                    src={authUser?.profilePic || avatar}
                     alt="me"
                     className="w-8 h-8 rounded-full object-cover"
                   />

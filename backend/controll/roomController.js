@@ -3,7 +3,6 @@ import Message from '../models/messageModel.js';
 import cloudinary from '../cloudinary.js';
 import { io } from '../index.js';
 
-// @desc   Create a new room
 export const createRoom = async (req, res) => {
   try {
     const { name, members = [] } = req.body;
@@ -32,7 +31,6 @@ export const createRoom = async (req, res) => {
   }
 };
 
-// @desc   Get all rooms
 export const getAllRooms = async (req, res) => {
   try {
     const rooms = await Room.find().populate("members", "username email");
@@ -43,7 +41,6 @@ export const getAllRooms = async (req, res) => {
   }
 };
 
-// @desc   Join an existing room
 export const joinRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -65,7 +62,8 @@ export const joinRoom = async (req, res) => {
   }
 };
 
-// @desc   Get messages of a room
+
+
 export const getRoomMessages = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -81,7 +79,8 @@ export const getRoomMessages = async (req, res) => {
   }
 };
 
-// @desc   Send a message in a room
+
+
 export const sendRoomMessage = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -101,7 +100,6 @@ export const sendRoomMessage = async (req, res) => {
       image: imageUrl
     });
 
-    // Emit to all users in the room via socket
     io.to(roomId).emit("newRoomMessage", message);
 
     res.status(201).json({ success: true, message });

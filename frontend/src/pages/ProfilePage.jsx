@@ -25,7 +25,9 @@ useEffect(() => {
     }
   };
 
+  const [loading,setLoading] = useState(false)
   const handleUpdate = async (e) => {
+    setLoading(true)
    e.preventDefault()
     try {
       if(!image)
@@ -40,6 +42,7 @@ useEffect(() => {
       const base64Image = reader.result
     
     await updateProfile({profilePic:base64Image, fullName:fullName, bio})
+    setLoading(false)
     navigate('/')
     }  
     } catch (error) {
@@ -132,7 +135,9 @@ useEffect(() => {
               onClick={handleUpdate}
               className="mt-4 bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-all"
             >
-              Update Info
+              {
+                loading? "Updating...":"Update info"
+              }
             </button>
           </div>
 

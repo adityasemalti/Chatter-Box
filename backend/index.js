@@ -16,12 +16,10 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app)
 
-//Initialise socket.io server
 export const io = new Server(server,{
   cors:{origin:"*"}
 })
 
-//store online users;
 export const userSocketMap = {} //{ userId:socketId}
 
 //socket.io connection
@@ -33,7 +31,7 @@ io.on("connection",(socket)=>{
     userSocketMap[userId]=socket.id;
 
     //emit online users to all connnected 
-    io.emit("getOnlineUSers",Object.keys(userSocketMap))
+    io.emit("getOnlineUsers",Object.keys(userSocketMap))
     socket.on("disconnect",()=>{
       console.log("user disconnected", userId)
       delete userSocketMap[userId];
